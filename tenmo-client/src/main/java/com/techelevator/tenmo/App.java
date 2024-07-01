@@ -93,28 +93,56 @@ public class App {
 
 	private void viewCurrentBalance() {
 
-        double currentBalance = restTemplate.getForObject(API_BASE_URL + "/currentBalance/" + currentUser.getUser().getId(), double.class);
+        double currentBalance = restTemplate.getForObject(API_BASE_URL + "/current_balance/" + currentUser.getUser().getId(), double.class);
         System.out.println("Your current account balance is: $" + currentBalance);
 		
 	}
 
 	private void viewTransferHistory() {
         List<Transfer> transferHistory = new ArrayList<>();
-        Transfer[] transfers = restTemplate.getForObject(API_BASE_URL + "/transferHistory/" + currentUser.getUser().getId(), Transfer[].class);
+        Transfer[] transfers = restTemplate.getForObject(API_BASE_URL + "/transfer_history/" + currentUser.getUser().getId(), Transfer[].class);
         System.out.println("-------------------------------------------\n" +
                                       "Transfers\n" +
                            "ID          From/To                 Amount\n" +
                            "-------------------------------------------");
         for (int i = 0; i < transfers.length; i++) {
             Transfer currentTransfer = transfers[i];
-            System.out.println(currentTransfer.getAccount_from() + "          " + "From: " + currentTransfer.);
+
+            if(currentTransfer.getAccount_from() == currentUser.getUser().getId()){
+                System.out.println(currentTransfer.getAccount_to() + "          " + "To: " + getUserById(currentTransfer.getAccount_to()) + "                 $" + currentTransfer.getAmount());
+
+            }else{
+                System.out.println(currentTransfer.getAccount_from() + "          " + "From: " + getUserById(currentTransfer.getAccount_from()) + "                 $" + currentTransfer.getAmount());
+
+            }
 
         }
 		
 	}
 
+    private String getUserById(int account_id){
+        String username = null;
+
+        username = restTemplate.getForObject(API_BASE_URL + "/get_username_by_account_id", String.class);
+
+        return username;
+    }
+
+
+
 	private void viewPendingRequests() {
-		// TODO Auto-generated method stub
+        System.out.println(
+                "-------------------------------------------\n" +
+                "Pending Transfers\n" +
+                "ID          To                     Amount\n" +
+                "-------------------------------------------");
+
+        Transfer[] transfers= restTemplate.getForObject(API_BASE_URL + "/pending_request", Transfer[].class);
+
+        for (int i = 0; i < transfers.length; i++) {
+            Transfer currentTransfer = transfers[i];
+            System.out.println(currentTransfer.getAccount_to() + "          " + getUserById(currentTransfer.getAccount_to()) + "                 $" + currentTransfer.getAmount());
+        }
 		
 	}
 
