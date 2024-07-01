@@ -1,10 +1,14 @@
 package com.techelevator.tenmo;
 
 import com.techelevator.tenmo.model.AuthenticatedUser;
+import com.techelevator.tenmo.model.Transfer;
 import com.techelevator.tenmo.model.UserCredentials;
 import com.techelevator.tenmo.services.AuthenticationService;
 import com.techelevator.tenmo.services.ConsoleService;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class App {
     private final RestTemplate restTemplate = new RestTemplate();
@@ -91,7 +95,17 @@ public class App {
 	}
 
 	private void viewTransferHistory() {
-		// TODO Auto-generated method stub
+        List<Transfer> transferHistory = new ArrayList<>();
+        Transfer[] transfers = restTemplate.getForObject(API_BASE_URL + "/transferHistory/" + currentUser.getUser().getId(), Transfer[].class);
+        System.out.println("-------------------------------------------\n" +
+                                      "Transfers\n" +
+                           "ID          From/To                 Amount\n" +
+                           "-------------------------------------------");
+        for (int i = 0; i < transfers.length; i++) {
+            Transfer currentTransfer = transfers[i];
+            System.out.println(currentTransfer.getAccount_from() + "          " + "From: " + currentTransfer.);
+
+        }
 		
 	}
 
