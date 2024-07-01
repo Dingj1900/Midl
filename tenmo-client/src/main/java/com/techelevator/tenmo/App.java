@@ -1,12 +1,17 @@
 package com.techelevator.tenmo;
 
 import com.techelevator.tenmo.model.AuthenticatedUser;
+import com.techelevator.tenmo.model.Transfer;
 import com.techelevator.tenmo.model.UserCredentials;
 import com.techelevator.tenmo.services.AuthenticationService;
 import com.techelevator.tenmo.services.ConsoleService;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class App {
-
+    private final RestTemplate restTemplate = new RestTemplate();
     private static final String API_BASE_URL = "http://localhost:8080/";
 
     private final ConsoleService consoleService = new ConsoleService();
@@ -88,13 +93,23 @@ public class App {
 
 	private void viewCurrentBalance() {
 
-		// TODO Auto-generated method stub
+        double currentBalance = restTemplate.getForObject(API_BASE_URL + "/currentBalance/" + currentUser.getUser().getId(), double.class);
+        System.out.println("Your current account balance is: $" + currentBalance);
 		
 	}
 
 	private void viewTransferHistory() {
+        List<Transfer> transferHistory = new ArrayList<>();
+        Transfer[] transfers = restTemplate.getForObject(API_BASE_URL + "/transferHistory/" + currentUser.getUser().getId(), Transfer[].class);
+        System.out.println("-------------------------------------------\n" +
+                                      "Transfers\n" +
+                           "ID          From/To                 Amount\n" +
+                           "-------------------------------------------");
+        for (int i = 0; i < transfers.length; i++) {
+            Transfer currentTransfer = transfers[i];
+            System.out.println(currentTransfer.getAccount_from() + "          " + "From: " + currentTransfer.);
 
-		// TODO Auto-generated method stub
+        }
 		
 	}
 
