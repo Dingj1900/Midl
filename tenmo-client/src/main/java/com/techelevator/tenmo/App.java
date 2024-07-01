@@ -4,9 +4,10 @@ import com.techelevator.tenmo.model.AuthenticatedUser;
 import com.techelevator.tenmo.model.UserCredentials;
 import com.techelevator.tenmo.services.AuthenticationService;
 import com.techelevator.tenmo.services.ConsoleService;
+import org.springframework.web.client.RestTemplate;
 
 public class App {
-
+    private final RestTemplate restTemplate = new RestTemplate();
     private static final String API_BASE_URL = "http://localhost:8080/";
 
     private final ConsoleService consoleService = new ConsoleService();
@@ -85,8 +86,8 @@ public class App {
     }
 
 	private void viewCurrentBalance() {
-		// TODO Auto-generated method stub
-		
+       double currentBalance = restTemplate.getForObject(API_BASE_URL + "/currentBalance/" + currentUser.getUser().getId(), double.class);
+        System.out.println("Your current account balance is: $" + currentBalance);
 	}
 
 	private void viewTransferHistory() {
