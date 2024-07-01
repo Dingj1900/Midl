@@ -5,13 +5,19 @@ import com.techelevator.tenmo.model.Transfer;
 import com.techelevator.tenmo.model.UserCredentials;
 import com.techelevator.tenmo.services.AuthenticationService;
 import com.techelevator.tenmo.services.ConsoleService;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 public class App {
     private final RestTemplate restTemplate = new RestTemplate();
+
     private static final String API_BASE_URL = "http://localhost:8080/";
 
     private final ConsoleService consoleService = new ConsoleService();
@@ -93,14 +99,14 @@ public class App {
 
 	private void viewCurrentBalance() {
 
-        double currentBalance = restTemplate.getForObject(API_BASE_URL + "/current_balance/" + currentUser.getUser().getId(), double.class);
+        double currentBalance = restTemplate.exchange(API_BASE_URL + "/current_balance/" + currentUser.getUser().getId(), HttpMethod.GET, null, double.class).getBody();
         System.out.println("Your current account balance is: $" + currentBalance);
 		
 	}
 
 	private void viewTransferHistory() {
         List<Transfer> transferHistory = new ArrayList<>();
-        Transfer[] transfers = restTemplate.getForObject(API_BASE_URL + "/transfer_history/" + currentUser.getUser().getId(), Transfer[].class);
+        Transfer[] transfers = restTemplate.exchange(API_BASE_URL + "/transfer_history/" + currentUser.getUser().getId(), HttpMethod.GET, null, Transfer[].class ).getBody();
         System.out.println("-------------------------------------------\n" +
                                       "Transfers\n" +
                            "ID          From/To                 Amount\n" +
@@ -117,13 +123,47 @@ public class App {
             }
 
         }
+
+        int userNumber = -1;
+        while(userNumber != 0){
+            System.out.println("Please enter transfer ID to view details (0 to cancel): ");
+            String userInput = consoleService.getScanner().nextLine();
+            try{
+                userNumber = Integer.parseInt(userInput);
+            }catch(NumberFormatException error){
+                System.out.println("Invalid number");
+                continue;
+            }
+
+            if(userNumber == 0){
+                break;
+            }
+
+            if(userNumber > 0){
+
+                for (int i = 0; i < transfers.length; i++) {
+                    if (transfers[i].getTransfer_id() == userNumber) {
+                        System.out.println(
+                                "--------------------------------------------\n" +
+                                        "Transfer Details\n" +
+                                        "--------------------------------------------");
+                        //needs a transfer.toString()
+                    }
+                }
+            }
+            else {
+                System.out.println("Cannot be negative");
+
+            }
+
+        }
 		
 	}
 
     private String getUserById(int account_id){
         String username = null;
 
-        username = restTemplate.getForObject(API_BASE_URL + "/get_username_by_account_id", String.class);
+        username = restTemplate.exchange(API_BASE_URL + "/get_username_by_account_id", HttpMethod.GET, null, String.class).getBody();
 
         return username;
     }
@@ -137,12 +177,66 @@ public class App {
                 "ID          To                     Amount\n" +
                 "-------------------------------------------");
 
-        Transfer[] transfers= restTemplate.getForObject(API_BASE_URL + "/pending_request", Transfer[].class);
+        Transfer[] transfers= restTemplate.exchange(API_BASE_URL + "/pending_request", HttpMethod.GET, null,Transfer[].class).getBody();
 
         for (int i = 0; i < transfers.length; i++) {
             Transfer currentTransfer = transfers[i];
             System.out.println(currentTransfer.getAccount_to() + "          " + getUserById(currentTransfer.getAccount_to()) + "                 $" + currentTransfer.getAmount());
         }
+
+        int userNumber = -1;
+        int transfer_id = -1;
+
+        while(userNumber!=0) {
+
+            System.out.println("Please enter transfer ID to approve/reject (0 to cancel): ");
+
+            String userInput = consoleService.getScanner().nextLine();
+
+
+            try{
+                transfer_id = Integer.parseInt(userInput);
+            }catch(NumberFormatException error){
+                System.out.println("Invalid number");
+                continue;
+            }
+
+            if( transfer_id == 0){
+                break;
+            }
+
+
+            System.out.println(
+                    "1: Approve\n" + "2: Reject\n" + "0: Don't approve or reject");
+
+            userInput = consoleService.getScanner().nextLine();
+
+            try{
+                userNumber = Integer.parseInt(userInput);
+            }catch(NumberFormatException error){
+                System.out.println("Invalid number");
+                continue;
+            }
+
+            if(userNumber == 1){
+                sendBucks(transfer_id);
+            }
+            if(userNumber == 2){
+                transfers[userNumber].setTransfer_status_id(3);
+
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+
+                HttpEntity<Transfer> entity = new HttpEntity<>( transfers[userNumber], headers);
+
+                restTemplate.exchange(API_BASE_URL + "/" + transfers[userNumber].getTransfer_id(), HttpMethod.PUT, entity,void.class);
+
+            }
+
+
+
+        }
+
 		
 	}
 
@@ -150,6 +244,15 @@ public class App {
 		// TODO Auto-generated method stub
 		
 	}
+
+    private void sendBucks(int transfer_id) {
+
+
+        // TODO Auto-generated method stub
+
+    }
+
+
 
 	private void requestBucks() {
 		// TODO Auto-generated method stub

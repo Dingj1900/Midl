@@ -88,4 +88,8 @@ public class ConsoleService {
         System.out.println("An error occurred. Check the log for details.");
     }
 
+    public Scanner getScanner(){
+        return scanner;
+    }
+
 }
