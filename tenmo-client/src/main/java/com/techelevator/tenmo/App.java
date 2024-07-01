@@ -21,7 +21,9 @@ public class App {
 
     private void run() {
         consoleService.printGreeting();
+
         loginMenu();
+
         if (currentUser != null) {
             mainMenu();
         }
@@ -85,11 +87,13 @@ public class App {
     }
 
 	private void viewCurrentBalance() {
+
 		// TODO Auto-generated method stub
 		
 	}
 
 	private void viewTransferHistory() {
+
 		// TODO Auto-generated method stub
 		
 	}
