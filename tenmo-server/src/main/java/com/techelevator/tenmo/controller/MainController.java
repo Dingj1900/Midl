@@ -11,8 +11,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.validation.Valid;
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -42,9 +44,9 @@ public class MainController {
     }
     @ResponseStatus(HttpStatus.OK)
     @GetMapping(path = "/account/balance")
-    public BigDecimal getAccountBalanceByUserId(Principal principle) {
+    public BigDecimal getAccountBalanceByUserId(Principal principal) {
         try {
-            return accountDao.getBalanceByUserId(userDao.getUserByUsername(principle.getName()).getId());
+            return accountDao.getBalanceByUserId(userDao.getUserByUsername(principal.getName()).getId());
 
         } catch (DaoException e ){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -54,12 +56,121 @@ public class MainController {
     @ResponseStatus(HttpStatus.OK)
     @GetMapping(path = "/transfer/user")
     public List<Transfer> getTransferListByUserId(Principal principal){
+
         try {
-            return transferDao.getTransferListById(user_id);
-        }catch (DaoException e ){
+            List <Transfer> approved= transferDao.getTransferListById(userDao.getUserByUsername(principal.getName()).getId(), TRANSFER_STATUS_APPROVED);
+            List <Transfer> rejected= transferDao.getTransferListById(userDao.getUserByUsername(principal.getName()).getId(), TRANSFER_STATUS_REJECTED);
+            List <Transfer> pending= transferDao.getTransferListById(userDao.getUserByUsername(principal.getName()).getId(), TRANSFER_STATUS_PENDING);
+
+            List <Transfer> totalList = new ArrayList<>(approved.size() + rejected.size() + pending.size());
+
+
+            totalList.addAll(approved);
+            totalList.addAll(rejected);
+            totalList.addAll(pending);
+
+            return totalList;
+        } catch (DaoException e ){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
     }
+
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping(path = "/transfer/send")
+    public Transfer sendTransferToUser(@Valid @RequestBody Transfer transfer) {
+        if (transfer.getAccount_to() == transfer.getAccount_from()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot send money to yourself");
+        }
+        BigDecimal userFromBalance  =  accountDao.getAccountByAccountId(transfer.getAccount_from()).getBalance();
+        BigDecimal transferAmount = transfer.getAmount();
+        if(userFromBalance.compareTo(transferAmount) == -1){
+            throw  new ResponseStatusException(HttpStatus.BAD_REQUEST, "Insufficient funds");
+        }
+        BigDecimal empty = new BigDecimal(0);
+        if(transferAmount.compareTo(empty) == 0 || transferAmount.compareTo(empty) == -1){
+            throw  new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot have 0 or negative transfer Amount");
+        }
+        try {
+            transfer.setTransfer_type_id(TRANSFER_TYPE_SEND);
+            transfer.setTransfer_status_id(TRANSFER_STATUS_APPROVED);
+            Transfer newTransfer = transferDao.createTransfer(transfer);
+
+            BigDecimal newBalanceAccountFrom = userFromBalance.subtract(transferAmount);
+            BigDecimal userToBalance = accountDao.getAccountByAccountId(transfer.getAccount_to()).getBalance();
+            BigDecimal newBalanceAccountTo = userToBalance.add(transferAmount);
+
+            accountDao.updateBalanceByAccountId(transfer.getAccount_from(), newBalanceAccountFrom);
+
+            accountDao.updateBalanceByAccountId(transfer.getAccount_to() ,newBalanceAccountTo);
+
+            return newTransfer;
+        } catch (DaoException e ){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @ResponseStatus(HttpStatus.OK)
+    @GetMapping(path = "/transfer")
+    public List<Transfer> getAllTransfers(@RequestParam(defaultValue = "0") int transferId, Principal principal) {
+        int userId = userDao.getUserByUsername(principal.getName()).getId();
+
+        if (transferId == 0) {
+            try {
+                return transferDao.getTransferListById(userId, TRANSFER_STATUS_APPROVED);
+            } catch (DaoException e) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            }
+        } else {
+            try {
+                List<Transfer> singleTransfer = new ArrayList<>();
+                singleTransfer.add(transferDao.getTransferById(userId));
+                return singleTransfer;
+            } catch (DaoException e) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            }
+        }
+    }
+
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping(path = "/transfer/request")
+    public Transfer postRequest(@Valid @RequestBody Transfer transfer, Principal principal){
+
+        int userId = userDao.getUserByUsername(principal.getName()).getId();
+        BigDecimal userFromBalance  =  accountDao.getAccountByAccountId(transfer.getAccount_from()).getBalance();
+        BigDecimal transferAmount = transfer.getAmount();
+        int accountId = accountDao.getAccountByUserId(userId).getId();
+
+        if (transfer.getAccount_to() == transfer.getAccount_from()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot send money to yourself");
+        }
+        if (accountId != transfer.getAccount_to()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        }
+        BigDecimal empty = new BigDecimal(0);
+        if(transferAmount.compareTo(empty) == 0 || transferAmount.compareTo(empty) == -1){
+            throw  new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot have 0 or negative transfer Amount");
+        }
+        try {
+            transfer.setTransfer_type_id(TRANSFER_TYPE_REQUEST);
+            transfer.setTransfer_status_id(TRANSFER_STATUS_PENDING);
+            Transfer newTransfer = transferDao.createTransfer(transfer);
+            return newTransfer;
+        } catch (DaoException e ){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @GetMapping(path = "/transfer/pending")
+    public List<Transfer> getPendingRequests(Principal principal) {
+        try {
+            List <Transfer> pending = transferDao.getTransferListById(userDao.getUserByUsername(principal.getName()).getId(), TRANSFER_STATUS_PENDING);
+            return pending;
+        } catch (DaoException e ){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    
 
 }

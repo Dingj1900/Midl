@@ -7,7 +7,7 @@ import java.util.List;
 public interface TransferDao {
 
     //Returns empty list and DaoException for errors
-    List<Transfer> getTransferListById(int id);
+    List<Transfer> getTransferListById(int id, int status);
 
     //Returns null Transfer object and DaoException for errors
     Transfer getTransferById(int id);

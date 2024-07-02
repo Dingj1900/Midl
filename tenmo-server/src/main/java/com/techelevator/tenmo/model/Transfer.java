@@ -13,11 +13,13 @@ public class Transfer {
     @Min(value = 1, message = "Can only be 1, 2, or 3")
     @Max(value = 3, message = "Can only be 1, 2, or 3")
     private int transfer_status_id;
+    @NotEmpty
     private int account_from;
+    @NotEmpty
     private int account_to;
 
     @NotNull
-    @PositiveOrZero(message = "Can only be positive")
+    @Positive(message = "Can only be positive")
     private BigDecimal amount;
 
     public int getTransfer_id() {

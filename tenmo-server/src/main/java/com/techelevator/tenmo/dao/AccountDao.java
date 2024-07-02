@@ -16,6 +16,9 @@ public interface AccountDao {
     BigDecimal getBalanceByUserId(int userId);
 
     //Returns false for fail, true for success and DaoException
-    boolean updateBalanceById(Account account);
+    boolean updateBalanceByAccountId(int account_id, BigDecimal balance);
 
+
+    Account getAccountByUserId(int userId);
 }
+
