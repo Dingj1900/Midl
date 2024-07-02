@@ -26,7 +26,7 @@ public class JdbcTransferDao implements TransferDao{
                 "FROM transfer JOIN account on account_to = account_id WHERE user_id = ?";
 
         try {
-            SqlRowSet results = jdbcTemplate.queryForRowSet(sql, id);
+            SqlRowSet results = jdbcTemplate.queryForRowSet(sql, id, id);
             while (results.next()) {
                 returnedTransfers.add(mapRowToTransfer(results));
             }

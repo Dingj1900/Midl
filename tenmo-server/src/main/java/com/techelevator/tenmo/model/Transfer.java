@@ -1,14 +1,23 @@
 package com.techelevator.tenmo.model;
 
 
+import javax.validation.constraints.*;
 import java.math.BigDecimal;
 
 public class Transfer {
+
     private int transfer_id;
+    @Min(value = 1, message = "Can only be 1 or 2")
+    @Max(value = 2, message = "Can only be 1 or 2")
     private int transfer_type_id;
+    @Min(value = 1, message = "Can only be 1, 2, or 3")
+    @Max(value = 3, message = "Can only be 1, 2, or 3")
     private int transfer_status_id;
     private int account_from;
     private int account_to;
+
+    @NotNull
+    @PositiveOrZero(message = "Can only be positive")
     private BigDecimal amount;
 
     public int getTransfer_id() {
