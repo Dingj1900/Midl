@@ -163,7 +163,7 @@ public class App {
     private String getUserById(int account_id){
         String username = null;
 
-        username = restTemplate.exchange(API_BASE_URL + "/get_username_by_account_id", HttpMethod.GET, null, String.class).getBody();
+        username = restTemplate.exchange(API_BASE_URL + "/get_username_by_account_id/" + account_id, HttpMethod.GET, null, String.class).getBody();
 
         return username;
     }
@@ -229,7 +229,7 @@ public class App {
 
                 HttpEntity<Transfer> entity = new HttpEntity<>( transfers[userNumber], headers);
 
-                restTemplate.exchange(API_BASE_URL + "/" + transfers[userNumber].getTransfer_id(), HttpMethod.PUT, entity,void.class);
+                restTemplate.exchange(API_BASE_URL + "/pending_update/" + transfers[userNumber].getTransfer_id(), HttpMethod.PUT, entity,void.class);
 
             }
 
