@@ -27,10 +27,10 @@ public class LoginDto {
    }
 
    @Override
-   public String toString() {
-      return "LoginDto{" +
-              "username='" + username + '\'' +
-              ", password='" + password + '\'' +
-              '}';
+      public String toString() {
+         return "LoginDto{" +
+                 "username='" + username + '\'' +
+                 ", password='" + password + '\'' +
+                 '}';
    }
 }
