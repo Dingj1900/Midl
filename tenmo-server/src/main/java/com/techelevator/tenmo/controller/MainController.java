@@ -35,6 +35,10 @@ public class MainController {
         this.userDao = userDao;
     }
 
+    @GetMapping(path = "/user")
+    public List<User> listOfUsers() {
+        return userDao.getUsers();
+    }
     @ResponseStatus(HttpStatus.OK)
     @GetMapping(path = "/account/balance/{user_id}")
     public BigDecimal getAccountBalanceByUserId(@RequestParam int user_id) {
