@@ -12,10 +12,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.security.Principal;
 import java.util.List;
 
 @RestController
-//@PreAuthorize("isAuthenticated()")
+@PreAuthorize("isAuthenticated()")
 public class MainController {
 
     private final AccountDao accountDao;
@@ -40,18 +41,19 @@ public class MainController {
         return userDao.getUsers();
     }
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping(path = "/account/balance/{user_id}")
-    public BigDecimal getAccountBalanceByUserId(@RequestParam int user_id) {
+    @GetMapping(path = "/account/balance")
+    public BigDecimal getAccountBalanceByUserId(Principal principle) {
         try {
-            return accountDao.getBalanceById(user_id);
+            return accountDao.getBalanceByUserId(userDao.getUserByUsername(principle.getName()).getId());
+
         } catch (DaoException e ){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
     }
 
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping(path = "/transfer/user/{user_id}")
-    public List<Transfer> getTransferListByUserId(@RequestParam int user_id ){
+    @GetMapping(path = "/transfer/user")
+    public List<Transfer> getTransferListByUserId(Principal principal){
         try {
             return transferDao.getTransferListById(user_id);
         }catch (DaoException e ){
