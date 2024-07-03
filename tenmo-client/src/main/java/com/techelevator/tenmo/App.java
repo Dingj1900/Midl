@@ -19,7 +19,7 @@ import java.util.Scanner;
 public class App {
     private final RestTemplate restTemplate = new RestTemplate();
 
-    private static final String API_BASE_URL = "http://localhost:8080/";
+    private static final String API_BASE_URL = "http://localhost:8080";
 
     private final ConsoleService consoleService = new ConsoleService();
     private final AuthenticationService authenticationService = new AuthenticationService(API_BASE_URL);
@@ -440,6 +440,10 @@ public class App {
 
             sendToUserId = consoleService.promptForInt(userInput);
 
+            if(sendToUserId == 0){
+                break;
+            }
+
             for(User element: users){
 
                 if(element.getId() != sendToUserId) {
@@ -519,6 +523,10 @@ public class App {
             System.out.println("Enter ID of user you are requesting from (0 to cancel): ");
 
             requestFromUser = consoleService.promptForInt(userInput);
+
+            if(requestFromUser == 0){
+                break;
+            }
 
             for(User element: users){
 
