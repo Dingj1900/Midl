@@ -17,6 +17,7 @@ import javax.websocket.server.PathParam;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -44,9 +45,19 @@ public class MainController {
     public List<User> listOfUsers() {
         return userDao.getUsers();
     }
+
+    @PostMapping(path = "user/id")
+    public String getUserNameById(@Valid@RequestBody int userId){
+        return userDao.getUserById(userId).getUsername();
+    }
+
+    @PostMapping(path = "/account/user")
+    public int getAccountId(@Valid@RequestBody int userId){
+        return accountDao.getAccountByUserId(userId).getId();
+    }
     @ResponseStatus(HttpStatus.OK)
     @GetMapping(path = "/account/balance")
-    public BigDecimal getAccountBalanceByUserId(Principal principal) {
+    public BigDecimal getAccountBalanceByUserId( Principal principal) {
         try {
             return accountDao.getBalanceByUserId(userDao.getUserByUsername(principal.getName()).getId());
 
@@ -113,13 +124,21 @@ public class MainController {
     }
 
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping(path = "/transfer")
+    @GetMapping(path = "/transfer/history")
     public List<Transfer> getAllTransfers(@RequestParam(defaultValue = "0") int transferId, Principal principal) {
         int userId = userDao.getUserByUsername(principal.getName()).getId();
 
         if (transferId == 0) {
             try {
-                return transferDao.getTransferListById(userId, TRANSFER_STATUS_APPROVED);
+
+                List<Transfer> approvedList =  transferDao.getTransferListById(userId, TRANSFER_STATUS_APPROVED);
+                List<Transfer> rejectList = transferDao.getTransferListById(userId, TRANSFER_STATUS_REJECTED);
+
+                List <Transfer> transferHistory = new ArrayList<>(approvedList.size() + rejectList.size());
+                transferHistory.addAll(approvedList);
+                transferHistory.addAll(rejectList);
+
+                return transferHistory;
             } catch (DaoException e) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND);
             }
@@ -220,5 +239,7 @@ public class MainController {
         }
 
     }
+
+
 
 }
