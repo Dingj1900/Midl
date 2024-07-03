@@ -446,8 +446,9 @@ public class App {
                     check = true;
                 }
             }
-            //stop at
-
+            if(!check){
+                System.out.println("User ID not found");
+            }
         }
 
         System.out.println("Enter Amount:");
@@ -465,7 +466,6 @@ public class App {
         createSendTransfer.setTransfer_status_id(2);
         createSendTransfer.setAmount(amount);
 
-
         try{
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -473,18 +473,92 @@ public class App {
 
             HttpEntity<Transfer> entity = new HttpEntity<>(createSendTransfer, headers);
 
-
             Transfer sendTransfer = restTemplate.exchange(API_BASE_URL + "/transfer/pending/approved", HttpMethod.PUT, entity, Transfer.class).getBody();
-
+            System.out.println("Amount sent successfully");
         }catch(RestClientResponseException error){
             System.out.println(error.getResponseBodyAsString());
-        } //ask tom for help
+        } catch(ResourceAccessException error){
+            System.out.println("Unable to connect to server");
+        }
 		
 	}
 
 	private void requestBucks() {
+        System.out.println(
+                        "-------------------------------------------\n" +
+                        "Users\n" +
+                        "ID          Name\n" +
+                        "-------------------------------------------");
+        User [] users;
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(currentUser.getToken());
 
-		
-	}
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            users = restTemplate.exchange(API_BASE_URL + "/user", HttpMethod.GET, entity, User[].class).getBody();
+
+            //prints all user except themselves
+            for(User element: users){
+
+                if(element.getId() != currentUser.getUser().getId()) {
+                    System.out.println(element.getId() + "          " + element.getUsername());
+                }
+            }
+
+        }catch (RestClientResponseException error){
+            System.out.println(error.getResponseBodyAsString());
+            users = new User[0];
+        }
+
+        boolean check = false;
+        String userInput = "";
+        int requestFromUser = 0;
+        while(!check) {
+            System.out.println("Enter ID of user you are requesting from (0 to cancel): ");
+
+            requestFromUser = consoleService.promptForInt(userInput);
+
+            for(User element: users){
+
+                if(element.getId() != requestFromUser) {
+                    check = true;
+                }
+            }
+            if (!check) {
+                System.out.println("User not found");
+            }
+
+        }
+
+        userInput = "";
+        requestFromUser = consoleService.promptForInt(userInput);
+        BigDecimal amount = new BigDecimal(0);
+
+        Transfer createRequestTransfer = new Transfer();
+        createRequestTransfer.setAccount_from(requestFromUser);
+        createRequestTransfer.setAccount_to(currentUser.getUser().getId());
+        createRequestTransfer.setTransfer_type_id(2);
+        createRequestTransfer.setTransfer_status_id(2);
+        createRequestTransfer.setAmount(amount);
+
+        try{
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(currentUser.getToken());
+
+            HttpEntity<Transfer> entity = new HttpEntity<>(createRequestTransfer, headers);
+
+
+            Transfer requestTransfer = restTemplate.exchange(API_BASE_URL + "/transfer/pending/approved", HttpMethod.PUT, entity, Transfer.class).getBody();
+
+            System.out.println("Request sent");
+        }catch(RestClientResponseException error){
+            System.out.println(error.getResponseBodyAsString());
+        } catch (ResourceAccessException error) {
+            System.out.println("Unable to reach server");
+        }
+    }
 
 }

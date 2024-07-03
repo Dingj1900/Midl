@@ -166,7 +166,7 @@ public class MainController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot send money to yourself");
         }
         if (accountId != transfer.getAccount_to()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You are not a part of this transfer");
         }
         BigDecimal empty = new BigDecimal(0);
         if(transferAmount.compareTo(empty) == 0 || transferAmount.compareTo(empty) == -1){
