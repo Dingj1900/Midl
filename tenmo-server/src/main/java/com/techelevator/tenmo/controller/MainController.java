@@ -4,6 +4,7 @@ import com.techelevator.tenmo.dao.AccountDao;
 import com.techelevator.tenmo.dao.TransferDao;
 import com.techelevator.tenmo.dao.UserDao;
 import com.techelevator.tenmo.exception.DaoException;
+import com.techelevator.tenmo.model.Account;
 import com.techelevator.tenmo.model.Transfer;
 import com.techelevator.tenmo.model.User;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.validation.Valid;
+import javax.websocket.server.PathParam;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -172,5 +174,51 @@ public class MainController {
     }
 
 
+    @PutMapping(path = "/transfer/pending/approved")
+    public Transfer changeStatusToApproved(@Valid@RequestBody Transfer transfer){
+        if(transfer.getTransfer_status_id() != TRANSFER_STATUS_APPROVED){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Transfer should be approved");
+        }
+
+        Account accountFrom = accountDao.getAccountByAccountId(transfer.getAccount_from());
+        Account accountTo = accountDao.getAccountByAccountId(transfer.getAccount_to());
+        BigDecimal transferAmount = transfer.getAmount();
+
+        if(accountFrom.getBalance().compareTo(transferAmount) == -1){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Insufficient Funds");
+        }
+
+        if(accountFrom.getId() == accountTo.getId()){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Can't send transfer amount to yourself");
+        }
+
+
+        try{
+
+            BigDecimal newAccountFromBalance = accountFrom.getBalance().subtract(transferAmount);
+            BigDecimal newAccountToBalance = accountTo.getBalance().add(transferAmount);
+
+            accountDao.updateBalanceByAccountId(accountFrom.getId(), newAccountFromBalance);
+            accountDao.updateBalanceByAccountId(accountTo.getId(), newAccountToBalance);
+
+            return transferDao.updateTransferById(transfer);
+        }catch (DaoException e ){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+    }
+
+    @PutMapping(path = "/transfer/pending/reject")
+    public Transfer changeStatusToRejected(@Valid@RequestBody Transfer transfer){
+        if(transfer.getTransfer_status_id() != TRANSFER_STATUS_REJECTED){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Transfer should be rejected");
+        }
+        try {
+            return transferDao.updateTransferById(transfer);
+        } catch (DaoException e ){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+    }
 
 }
