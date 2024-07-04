@@ -37,11 +37,11 @@ public class JdbcAccountDao implements AccountDao{
     }
 
     @Override
-    public Account getAccountByAccountId(int accountId){
+    public Account getAccountByAccountId(int account_Id){
         Account account = null;
-        String sql = "SELECT account_id, user_id, balance FROM account WHERE account_id = ?";
+        String sql = "SELECT * FROM account WHERE account_id = ? ";
         try {
-            SqlRowSet results = jdbcTemplate.queryForRowSet(sql, accountId);
+            SqlRowSet results = jdbcTemplate.queryForRowSet(sql, account_Id);
             if (results.next()) {
                 account = mapRowToAccount(results);
             }
@@ -72,11 +72,11 @@ public class JdbcAccountDao implements AccountDao{
     }
 
     @Override
-    public boolean updateBalanceByAccountId(int account_id, BigDecimal balance) {
+    public boolean updateBalanceByUserId(int user_id, BigDecimal balance) {
         boolean success = false;
-        String sql = "UPDATE balance SET balance = ? WHERE account_id = ?";
+        String sql = "UPDATE account SET balance = ? WHERE user_id = ?";
         try {
-            int rowsAffected = jdbcTemplate.update(sql, balance, account_id);
+            int rowsAffected = jdbcTemplate.update(sql, balance, user_id);
             if (rowsAffected == 0) {
                 throw new DaoException("Unable to update");
             } else {
@@ -91,13 +91,13 @@ public class JdbcAccountDao implements AccountDao{
     }
     @Override
     public Account getAccountByUserId(int userId){
-        String sql = "SELECT account_id WHERE user_id = ?";
+        String sql = "SELECT * FROM account WHERE user_id = ?";
 
         Account account = null;
         try{
            SqlRowSet results = jdbcTemplate.queryForRowSet(sql, userId);
             if(results.next()) {
-                account = getAccountByAccountId(results.getInt("account_id"));
+                account = mapRowToAccount(results);
             }
         }catch (CannotGetJdbcConnectionException e) {
             throw new DaoException("Unable to connect to server or database", e);
@@ -105,7 +105,7 @@ public class JdbcAccountDao implements AccountDao{
             throw new DaoException("Data integrity violation", e);
         }
 
-            return account;
+        return account;
 
     }
 

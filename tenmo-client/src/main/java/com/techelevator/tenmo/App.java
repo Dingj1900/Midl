@@ -31,6 +31,9 @@ public class App {
         app.run();
     }
 
+
+
+
     private void run() {
         consoleService.printGreeting();
 
@@ -119,7 +122,7 @@ public class App {
 	}
 
 	private void viewTransferHistory() {
-        List<Transfer> transferHistory = new ArrayList<>();
+        List<Transfer> transfersList = new ArrayList<>();
 
         try{
             HttpHeaders headers = new HttpHeaders();
@@ -127,18 +130,25 @@ public class App {
             headers.setBearerAuth(currentUser.getToken());
             HttpEntity<String> entity = new HttpEntity<>(headers);
 
-            Transfer[] transfers = restTemplate.exchange(API_BASE_URL + "/transfer/user", HttpMethod.GET, entity, Transfer[].class ).getBody();
-            transferHistory = new ArrayList<>(transfers.length);
-            Collections.addAll(transferHistory, transfers);
+            Transfer [] transfers = restTemplate.exchange(API_BASE_URL + "/transfer/user", HttpMethod.GET, entity, Transfer[].class ).getBody();
+            transfersList = new ArrayList<>(transfers.length);
+            System.out.println(transfers.length);
+            Collections.addAll(transfersList, transfers);
+            System.out.println(transfersList.size());
         }catch(RestClientResponseException error){
             System.out.println(error.getResponseBodyAsString());
+        }catch (ResourceAccessException error){
+            System.out.println("Cannot access server");
         }
+
+        //display all the transfer related to the user
         System.out.println("-------------------------------------------\n" +
                                       "Transfers\n" +
                            "ID          From/To                 Amount\n" +
                            "-------------------------------------------");
-        for (int i = 0; i < transferHistory.size(); i++) {
-            Transfer currentTransfer = transferHistory.get(i);
+
+        for (int i = 0; i < transfersList.size(); i++) {
+            Transfer currentTransfer = transfersList.get(i);
 
             try{
 
@@ -146,129 +156,128 @@ public class App {
                 headers.setContentType(MediaType.APPLICATION_JSON);
                 headers.setBearerAuth(currentUser.getToken());
 
-                HttpEntity<Integer> entity = new HttpEntity<>( currentUser.getUser().getId(), headers);
+                HttpEntity<String> entity = new HttpEntity<>(headers);
 
-                int ourAccount = restTemplate.exchange(API_BASE_URL + "/account/user", HttpMethod.POST, entity, int.class).getBody();
+                //get accountId from userId
+                int ourAccount = restTemplate.exchange(API_BASE_URL + "/account/user", HttpMethod.GET, entity, int.class).getBody();
 
                 if(currentTransfer.getAccount_from() == ourAccount){
-                    System.out.println(currentTransfer.getAccount_to() + "          " + "To: " + getUserById(currentTransfer.getAccount_to()) + "                 $" + currentTransfer.getAmount());
+                    System.out.println(currentTransfer.getTransfer_id()   + "          " + "To: "   + getUsernameById(currentTransfer.getAccount_to())   + "                 $" + currentTransfer.getAmount());
 
                 }else{
-                    System.out.println(currentTransfer.getAccount_from() + "          " + "From: " + getUserById(currentTransfer.getAccount_from()) + "                 $" + currentTransfer.getAmount());
+                    System.out.println(currentTransfer.getTransfer_id() + "          " + "From: " + getUsernameById(currentTransfer.getAccount_from()) + "                 $" + currentTransfer.getAmount());
 
                 }
 
             }catch (RestClientResponseException error){
                 System.out.println(error.getResponseBodyAsString());
+                System.out.println("error");
             }catch (ResourceAccessException error){
                 System.out.println("Not connected");
             }
-
-
-
         }
+
 
         int userNumber = -1;
         while(userNumber != 0){
-            System.out.println("Please enter transfer ID to view details (0 to cancel): ");
-            String userInput = consoleService.getScanner().nextLine();
-            try{
-                userNumber = Integer.parseInt(userInput);
-            }catch(NumberFormatException error){
-                System.out.println("Invalid number");
-                continue;
-            }
+            userNumber = consoleService.promptForInt("Please enter transfer ID to view details (0 to cancel): ");
 
             if(userNumber == 0){
                 break;
             }
 
             if(userNumber > 0){
-
-                for (int i = 0; i < transferHistory.size(); i++) {
-
-                    if (transferHistory.get(i).getTransfer_id() == userNumber) {
-                        System.out.println(
-                                "--------------------------------------------\n" +
-                                        "Transfer Details\n" +
-                                        "--------------------------------------------");
-                        //needs a transfer.toString()
-                        System.out.println("ID: " + transferHistory.get(i).getTransfer_id() );
+                Transfer currentTransfer = null;
+                String username;
 
 
-                        String username = null;
-                        //for account_from user
-                        {
-                            try{
-
-                                HttpHeaders header = new HttpHeaders();
-                                header.setContentType(MediaType.APPLICATION_JSON);
-                                header.setBearerAuth(currentUser.getToken());
-
-                                HttpEntity <Integer> entity = new HttpEntity<>(transferHistory.get(i).getAccount_from(), header);
-                                username = restTemplate.exchange(API_BASE_URL + "/user/id", HttpMethod.POST, entity, String.class).getBody();
-                            }
-                            catch (RestClientResponseException error){
-                                System.out.println(error.getResponseBodyAsString());
-                            }
-
-                            if(username == null){
-                                System.out.println("Invalid Transfer account_id");
-                            }else {
-                                System.out.println("From " + username);
-                            }
-                        }
-
-                        //for account_to user
-                        {
-                            try{
-
-                                HttpHeaders header = new HttpHeaders();
-                                header.setContentType(MediaType.APPLICATION_JSON);
-                                header.setBearerAuth(currentUser.getToken());
-
-                                HttpEntity <Integer> entity = new HttpEntity<>(transferHistory.get(i).getAccount_to(), header);
-
-                                username = restTemplate.exchange(API_BASE_URL + "/user/id", HttpMethod.POST, entity, String.class).getBody();
-                            }
-                            catch (RestClientResponseException error){
-                                System.out.println(error.getResponseBodyAsString());
-                            }
-
-                            if(username == null){
-                                System.out.println("Invalid Transfer account_id");
-                            }else{
-                                System.out.println("To " + username);
-                            }
-                        }
-
-                        //for type
-                        {
-                            String type;
-                            if(transferHistory.get(i).getTransfer_type_id() == 1){
-                                type = "Request";
-                            }else{
-                                type = "Send";
-                            }
-                            System.out.println("Type: " + type);
-                        }
-
-                        //for status
-
-                        {
-                            String status;
-                            if(transferHistory.get(i).getTransfer_type_id() == 2){
-                                status = "Approved";
-                            }else{
-                                status = "Rejected";
-                            }
-                            System.out.println("Type: " + status);
-                        }
-
-
-                        System.out.println("Amount: $" + transferHistory.get(i).getAmount());
-
+                for(Transfer element: transfersList){
+                    if(element.getTransfer_id() == userNumber){
+                        currentTransfer = element;
+                        break;
                     }
+                }
+
+                //stop at
+
+                if(transfersList.contains(userNumber)){
+                    System.out.println(
+                            "--------------------------------------------\n" +
+                                    "Transfer Details\n" +
+                            "--------------------------------------------");
+
+
+                    for (int i = 0; i < transfersList.size(); i++) {
+                        if(transfersList.get(i).getTransfer_id() == userNumber){
+                            currentTransfer = transfersList.get(i);
+                            break;
+                        }
+                    }
+
+                    //show Id
+                    System.out.println("ID: " + currentTransfer.getTransfer_id());
+
+                    //for account_from user
+                    {
+                        try{
+
+                            HttpHeaders header = new HttpHeaders();
+                            header.setContentType(MediaType.APPLICATION_JSON);
+                            header.setBearerAuth(currentUser.getToken());
+
+                            HttpEntity <Integer> entity = new HttpEntity<>(currentTransfer.getAccount_from(), header);
+                            username = restTemplate.exchange(API_BASE_URL + "/user/id", HttpMethod.POST, entity, String.class).getBody();
+                            System.out.println("From " + username);
+                        }
+                        catch (RestClientResponseException error){
+                            System.out.println(error.getResponseBodyAsString());
+                        }
+                    }
+
+                    //for account_to user
+                    try{
+
+                        HttpHeaders header = new HttpHeaders();
+                        header.setContentType(MediaType.APPLICATION_JSON);
+                        header.setBearerAuth(currentUser.getToken());
+
+                        HttpEntity <Integer> entity = new HttpEntity<>(currentTransfer.getAccount_to(), header);
+
+                        username = restTemplate.exchange(API_BASE_URL + "/user/id", HttpMethod.POST, entity, String.class).getBody();
+                        System.out.println("To " + username);
+                    }
+                    catch (RestClientResponseException error){
+                        System.out.println(error.getResponseBodyAsString());
+                    }
+
+                    //for type
+                    {
+                        String type;
+                        if(currentTransfer.getTransfer_type_id() == 1){
+                            type = "Request";
+                        }else{
+                            type = "Send";
+                        }
+                        System.out.println("Type: " + type);
+                    }
+
+                    //for status
+                    {
+                        String status;
+                        if(currentTransfer.getTransfer_type_id() == 2){
+                            status = "Approved";
+                        }else{
+                            status = "Rejected";
+                        }
+                        System.out.println("Type: " + status);
+                    }
+
+                    System.out.println("Amount: $" + currentTransfer.getAmount());
+
+
+
+                }else{
+                    System.out.println("Transfer Id does not exist");
                 }
             }
             else {
@@ -280,9 +289,8 @@ public class App {
 		
 	}
 
-    private String getUserById(int account_id){
+    private String getUsernameById(int account_id){
         String username = null;
-
 
         try {
             HttpHeaders headers = new HttpHeaders();
@@ -291,7 +299,7 @@ public class App {
 
             HttpEntity<Integer> entity = new HttpEntity<>(account_id, headers);
 
-            username = restTemplate.exchange(API_BASE_URL + "/user/id" + account_id, HttpMethod.GET, entity, String.class).getBody();
+            username = restTemplate.exchange(API_BASE_URL + "/user/id" , HttpMethod.POST, entity, String.class).getBody();
 
         }catch (RestClientResponseException error){
             System.out.println(error.getResponseBodyAsString());
@@ -325,7 +333,7 @@ public class App {
 
         for (int i = 0; i < transfers.length; i++) {
             Transfer currentTransfer = transfers[i];
-            System.out.println(currentTransfer.getAccount_to() + "          " + getUserById(currentTransfer.getAccount_to()) + "                 $" + currentTransfer.getAmount());
+            System.out.println(currentTransfer.getAccount_to() + "          " + getUsernameById(currentTransfer.getAccount_to()) + "                 $" + currentTransfer.getAmount());
         }
 
         int userInputTransferId = -1;
@@ -463,26 +471,29 @@ public class App {
             amount = consoleService.promptForBigDecimal(userInput);
         }
 
-        Transfer createSendTransfer = new Transfer();
-        createSendTransfer.setAccount_from(currentUser.getUser().getId());
-        createSendTransfer.setAccount_to(sendToUserId);
-        createSendTransfer.setTransfer_type_id(2);
-        createSendTransfer.setTransfer_status_id(2);
-        createSendTransfer.setAmount(amount);
+
 
         try{
+            Transfer createSendTransfer = new Transfer();
+            createSendTransfer.setAccount_from(currentUser.getUser().getId());
+            createSendTransfer.setAccount_to(sendToUserId);
+            createSendTransfer.setTransfer_type_id(2);
+            createSendTransfer.setTransfer_status_id(2);
+            createSendTransfer.setAmount(amount);
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(currentUser.getToken());
 
             HttpEntity<Transfer> entity = new HttpEntity<>(createSendTransfer, headers);
 
-            Transfer sendTransfer = restTemplate.exchange(API_BASE_URL + "/transfer/pending/approved", HttpMethod.PUT, entity, Transfer.class).getBody();
+            Transfer sendTransfer = restTemplate.exchange(API_BASE_URL + "/transfer/send", HttpMethod.POST, entity, Transfer.class).getBody();
             System.out.println("Amount sent successfully");
         }catch(RestClientResponseException error){
             System.out.println(error.getResponseBodyAsString());
         } catch(ResourceAccessException error){
             System.out.println("Unable to connect to server");
+        }catch(Exception e){
+
         }
 		
 	}
@@ -559,7 +570,7 @@ public class App {
             HttpEntity<Transfer> entity = new HttpEntity<>(createRequestTransfer, headers);
 
 
-            Transfer requestTransfer = restTemplate.exchange(API_BASE_URL + "/transfer/pending/approved", HttpMethod.PUT, entity, Transfer.class).getBody();
+            Transfer requestTransfer = restTemplate.exchange(API_BASE_URL + "/transfer/request", HttpMethod.PUT, entity, Transfer.class).getBody();
 
             System.out.println("Request sent");
         }catch(RestClientResponseException error){

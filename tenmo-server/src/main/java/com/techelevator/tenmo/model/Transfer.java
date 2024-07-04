@@ -13,9 +13,9 @@ public class Transfer {
     @Min(value = 1, message = "Can only be 1, 2, or 3")
     @Max(value = 3, message = "Can only be 1, 2, or 3")
     private int transfer_status_id;
-    @NotEmpty
+    @Min(value = 1)
     private int account_from;
-    @NotEmpty
+    @Min(value = 1)
     private int account_to;
 
     @NotNull

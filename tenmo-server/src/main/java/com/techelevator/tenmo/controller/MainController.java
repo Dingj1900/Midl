@@ -14,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import javax.validation.Valid;
 import javax.websocket.server.PathParam;
+import java.awt.*;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -46,15 +47,33 @@ public class MainController {
         return userDao.getUsers();
     }
 
-    @PostMapping(path = "user/id")
-    public String getUserNameById(@Valid@RequestBody int userId){
+    @PostMapping(path = "/user/id")
+    public String getUserNameById(@Valid@RequestBody int accountId){
+        try {
+            int userId = accountDao.getAccountByAccountId(accountId).getUserId();
+            return userDao.getUserById(userId).getUsername();
+        }catch (DaoException error){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find username from user Id");
+        }
+    }
+
+    @GetMapping(path = "/account/user")
+    public int getAccountId(Principal principal){
+        int userId = userDao.getUserByUsername(principal.getName()).getId();
+        try {
+            Account check = accountDao.getAccountByUserId(userId);
+            return check.getId();
+        }catch (DaoException e){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"User id doesn't exist");
+        }
+    }
+
+    @PostMapping(path = "/account/name")
+    public String getUsernameByAccountId(@Valid@RequestBody int accountId){
+        int userId = accountDao.getAccountByAccountId(accountId).getUserId();
         return userDao.getUserById(userId).getUsername();
     }
 
-    @PostMapping(path = "/account/user")
-    public int getAccountId(@Valid@RequestBody int userId){
-        return accountDao.getAccountByUserId(userId).getId();
-    }
     @ResponseStatus(HttpStatus.OK)
     @GetMapping(path = "/account/balance")
     public BigDecimal getAccountBalanceByUserId( Principal principal) {
@@ -71,16 +90,16 @@ public class MainController {
     public List<Transfer> getTransferListByUserId(Principal principal){
 
         try {
-            List <Transfer> approved= transferDao.getTransferListById(userDao.getUserByUsername(principal.getName()).getId(), TRANSFER_STATUS_APPROVED);
-            List <Transfer> rejected= transferDao.getTransferListById(userDao.getUserByUsername(principal.getName()).getId(), TRANSFER_STATUS_REJECTED);
-            List <Transfer> pending= transferDao.getTransferListById(userDao.getUserByUsername(principal.getName()).getId(), TRANSFER_STATUS_PENDING);
+            int user = userDao.getUserByUsername(principal.getName()).getId();
 
-            List <Transfer> totalList = new ArrayList<>(approved.size() + rejected.size() + pending.size());
+            List <Transfer> approved= transferDao.getTransferListById(user, TRANSFER_STATUS_APPROVED);
+            List <Transfer> rejected= transferDao.getTransferListById(user, TRANSFER_STATUS_REJECTED);
+
+            List <Transfer> totalList = new ArrayList<>(approved.size() + rejected.size());
 
 
             totalList.addAll(approved);
             totalList.addAll(rejected);
-            totalList.addAll(pending);
 
             return totalList;
         } catch (DaoException e ){
@@ -92,11 +111,20 @@ public class MainController {
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping(path = "/transfer/send")
     public Transfer sendTransferToUser(@Valid @RequestBody Transfer transfer) {
+
         if (transfer.getAccount_to() == transfer.getAccount_from()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot send money to yourself");
         }
-        BigDecimal userFromBalance  =  accountDao.getAccountByAccountId(transfer.getAccount_from()).getBalance();
+
+        int userFromId = transfer.getAccount_from();
+        Account accountFromAccount = accountDao.getAccountByUserId(userFromId);
+        BigDecimal userFromBalance  = accountFromAccount.getBalance();
+        int userInId = transfer.getAccount_to();
+        Account accountInAccount = accountDao.getAccountByUserId(userInId);
+        BigDecimal userInBalance = accountInAccount.getBalance();
+
         BigDecimal transferAmount = transfer.getAmount();
+
         if(userFromBalance.compareTo(transferAmount) == -1){
             throw  new ResponseStatusException(HttpStatus.BAD_REQUEST, "Insufficient funds");
         }
@@ -104,18 +132,31 @@ public class MainController {
         if(transferAmount.compareTo(empty) == 0 || transferAmount.compareTo(empty) == -1){
             throw  new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot have 0 or negative transfer Amount");
         }
+        if(transfer.getTransfer_status_id() != TRANSFER_STATUS_APPROVED){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Transfer is not approved");
+        }
+
+        if(transfer.getTransfer_type_id() != TRANSFER_TYPE_SEND){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Transfer is not sent");
+        }
         try {
-            transfer.setTransfer_type_id(TRANSFER_TYPE_SEND);
-            transfer.setTransfer_status_id(TRANSFER_STATUS_APPROVED);
+
+            int accountToId = accountDao.getAccountByUserId(transfer.getAccount_to()).getId();
+            int accountFromId = accountDao.getAccountByUserId(transfer.getAccount_from()).getId();
+
+            transfer.setAccount_from(accountFromId);
+            transfer.setAccount_to(accountToId);
+
             Transfer newTransfer = transferDao.createTransfer(transfer);
 
             BigDecimal newBalanceAccountFrom = userFromBalance.subtract(transferAmount);
-            BigDecimal userToBalance = accountDao.getAccountByAccountId(transfer.getAccount_to()).getBalance();
-            BigDecimal newBalanceAccountTo = userToBalance.add(transferAmount);
+            BigDecimal newBalanceAccountTo = userInBalance.add(transferAmount);
 
-            accountDao.updateBalanceByAccountId(transfer.getAccount_from(), newBalanceAccountFrom);
+            int userIdFrom = accountDao.getAccountByAccountId(transfer.getAccount_from()).getUserId();
+            int userIdTo = accountDao.getAccountByAccountId(transfer.getAccount_to()).getUserId();
 
-            accountDao.updateBalanceByAccountId(transfer.getAccount_to() ,newBalanceAccountTo);
+            accountDao.updateBalanceByUserId(userFromId, newBalanceAccountFrom);
+            accountDao.updateBalanceByUserId(userInId ,newBalanceAccountTo);
 
             return newTransfer;
         } catch (DaoException e ){
@@ -158,7 +199,7 @@ public class MainController {
     public Transfer postRequest(@Valid @RequestBody Transfer transfer, Principal principal){
 
         int userId = userDao.getUserByUsername(principal.getName()).getId();
-        BigDecimal userFromBalance  =  accountDao.getAccountByAccountId(transfer.getAccount_from()).getBalance();
+
         BigDecimal transferAmount = transfer.getAmount();
         int accountId = accountDao.getAccountByUserId(userId).getId();
 
@@ -168,14 +209,23 @@ public class MainController {
         if (accountId != transfer.getAccount_to()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You are not a part of this transfer");
         }
+
         BigDecimal empty = new BigDecimal(0);
         if(transferAmount.compareTo(empty) == 0 || transferAmount.compareTo(empty) == -1){
             throw  new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot have 0 or negative transfer Amount");
         }
+
+        if(transfer.getTransfer_status_id() != TRANSFER_STATUS_PENDING){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Transfer is not pending");
+        }
+        if(transfer.getTransfer_type_id() != TRANSFER_TYPE_REQUEST){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Transfer is not a request");
+        }
         try {
-            transfer.setTransfer_type_id(TRANSFER_TYPE_REQUEST);
-            transfer.setTransfer_status_id(TRANSFER_STATUS_PENDING);
+
+
             Transfer newTransfer = transferDao.createTransfer(transfer);
+
             return newTransfer;
         } catch (DaoException e ){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -199,8 +249,8 @@ public class MainController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Transfer should be approved");
         }
 
-        Account accountFrom = accountDao.getAccountByAccountId(transfer.getAccount_from());
-        Account accountTo = accountDao.getAccountByAccountId(transfer.getAccount_to());
+        Account accountFrom = accountDao.getAccountByUserId(transfer.getAccount_from());
+        Account accountTo = accountDao.getAccountByUserId(transfer.getAccount_to());
         BigDecimal transferAmount = transfer.getAmount();
 
         if(accountFrom.getBalance().compareTo(transferAmount) == -1){
@@ -217,8 +267,8 @@ public class MainController {
             BigDecimal newAccountFromBalance = accountFrom.getBalance().subtract(transferAmount);
             BigDecimal newAccountToBalance = accountTo.getBalance().add(transferAmount);
 
-            accountDao.updateBalanceByAccountId(accountFrom.getId(), newAccountFromBalance);
-            accountDao.updateBalanceByAccountId(accountTo.getId(), newAccountToBalance);
+            accountDao.updateBalanceByUserId(accountFrom.getId(), newAccountFromBalance);
+            accountDao.updateBalanceByUserId(accountTo.getId(), newAccountToBalance);
 
             return transferDao.updateTransferById(transfer);
         }catch (DaoException e ){
