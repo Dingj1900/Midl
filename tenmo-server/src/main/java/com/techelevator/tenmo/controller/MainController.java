@@ -250,12 +250,12 @@ public class MainController {
 
     @PutMapping(path = "/transfer/pending/approved")
     public Transfer changeStatusToApproved(@Valid@RequestBody Transfer transfer){
-        if(transfer.getTransfer_status_id() != TRANSFER_STATUS_APPROVED){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Transfer should be approved");
+        if(transfer.getTransfer_status_id() != TRANSFER_STATUS_PENDING){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Transfer should be pending currently");
         }
 
-        Account accountFrom = accountDao.getAccountByUserId(transfer.getAccount_from());
-        Account accountTo = accountDao.getAccountByUserId(transfer.getAccount_to());
+        Account accountFrom = accountDao.getAccountByAccountId(transfer.getAccount_from());
+        Account accountTo = accountDao.getAccountByAccountId(transfer.getAccount_to());
         BigDecimal transferAmount = transfer.getAmount();
 
         if(accountFrom.getBalance().compareTo(transferAmount) == -1){
@@ -272,8 +272,11 @@ public class MainController {
             BigDecimal newAccountFromBalance = accountFrom.getBalance().subtract(transferAmount);
             BigDecimal newAccountToBalance = accountTo.getBalance().add(transferAmount);
 
-            accountDao.updateBalanceByUserId(accountFrom.getId(), newAccountFromBalance);
-            accountDao.updateBalanceByUserId(accountTo.getId(), newAccountToBalance);
+
+            transfer.setTransfer_status_id(TRANSFER_STATUS_APPROVED);
+
+            accountDao.updateBalanceByUserId(accountFrom.getUserId(), newAccountFromBalance);
+            accountDao.updateBalanceByUserId(accountTo.getUserId(), newAccountToBalance);
 
             return transferDao.updateTransferById(transfer);
         }catch (DaoException e ){
@@ -284,10 +287,12 @@ public class MainController {
 
     @PutMapping(path = "/transfer/pending/reject")
     public Transfer changeStatusToRejected(@Valid@RequestBody Transfer transfer){
-        if(transfer.getTransfer_status_id() != TRANSFER_STATUS_REJECTED){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Transfer should be rejected");
+        if(transfer.getTransfer_status_id() != TRANSFER_STATUS_PENDING){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Transfer should be pending");
         }
         try {
+            transfer.setTransfer_status_id(TRANSFER_STATUS_REJECTED);
+
             return transferDao.updateTransferById(transfer);
         } catch (DaoException e ){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
