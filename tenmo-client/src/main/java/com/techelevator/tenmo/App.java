@@ -42,6 +42,7 @@ public class App {
         if (currentUser != null) {
             mainMenu();
         }
+
     }
     private void loginMenu() {
         int menuSelection = -1;
@@ -93,9 +94,9 @@ public class App {
             } else if (menuSelection == 5) {
                 requestBucks();
             } else if (menuSelection == 0) {
-                menuSelection = -1;
-                consoleService.printGreeting();
-                loginMenu();
+                currentUser = null;
+                run();
+
             } else {
                 System.out.println("Invalid Selection");
             }
