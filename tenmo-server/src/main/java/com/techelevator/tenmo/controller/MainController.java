@@ -47,6 +47,7 @@ public class MainController {
         return userDao.getUsers();
     }
 
+    //get disguised as a post
     @PostMapping(path = "/user/id")
     public String getUserNameById(@Valid@RequestBody int accountId){
         try {

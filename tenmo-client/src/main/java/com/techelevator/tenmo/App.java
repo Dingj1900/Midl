@@ -96,7 +96,6 @@ public class App {
             } else if (menuSelection == 0) {
                 currentUser = null;
                 run();
-
             } else {
                 System.out.println("Invalid Selection");
             }
