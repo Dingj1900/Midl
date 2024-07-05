@@ -69,8 +69,10 @@ public class MainController {
         }
     }
 
+    @ResponseStatus(HttpStatus.OK)
     @PostMapping(path = "/account/name")
     public String getUsernameByAccountId(@Valid@RequestBody int accountId){
+
         int userId = accountDao.getAccountByAccountId(accountId).getUserId();
         return userDao.getUserById(userId).getUsername();
     }
@@ -117,11 +119,11 @@ public class MainController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot send money to yourself");
         }
 
-        int userFromId = transfer.getAccount_from();
-        Account accountFromAccount = accountDao.getAccountByUserId(userFromId);
+        int userUserFromId = transfer.getAccount_from();
+        Account accountFromAccount = accountDao.getAccountByUserId(userUserFromId);
         BigDecimal userFromBalance  = accountFromAccount.getBalance();
-        int userInId = transfer.getAccount_to();
-        Account accountInAccount = accountDao.getAccountByUserId(userInId);
+        int userUserInId = transfer.getAccount_to();
+        Account accountInAccount = accountDao.getAccountByUserId(userUserInId);
         BigDecimal userInBalance = accountInAccount.getBalance();
 
         BigDecimal transferAmount = transfer.getAmount();
@@ -153,11 +155,8 @@ public class MainController {
             BigDecimal newBalanceAccountFrom = userFromBalance.subtract(transferAmount);
             BigDecimal newBalanceAccountTo = userInBalance.add(transferAmount);
 
-            int userIdFrom = accountDao.getAccountByAccountId(transfer.getAccount_from()).getUserId();
-            int userIdTo = accountDao.getAccountByAccountId(transfer.getAccount_to()).getUserId();
-
-            accountDao.updateBalanceByUserId(userFromId, newBalanceAccountFrom);
-            accountDao.updateBalanceByUserId(userInId ,newBalanceAccountTo);
+            accountDao.updateBalanceByUserId(userUserFromId, newBalanceAccountFrom);
+            accountDao.updateBalanceByUserId(userUserInId ,newBalanceAccountTo);
 
             return newTransfer;
         } catch (DaoException e ){
@@ -280,6 +279,7 @@ public class MainController {
             accountDao.updateBalanceByUserId(accountTo.getUserId(), newAccountToBalance);
 
             return transferDao.updateTransferById(transfer);
+
         }catch (DaoException e ){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }

@@ -70,7 +70,7 @@ public class JdbcTransferDao implements TransferDao{
     public Transfer updateTransferById(Transfer transfer) {
         Transfer updatedTransfer = null;
         String sql = "UPDATE transfer " +
-                     "SET transfer_type_id = ?, transfer_status_id = ?, account_from = ?, account_to = ?, amount = ?\n" +
+                     "SET transfer_type_id = ?, transfer_status_id = ?, account_from = ?, account_to = ?, amount = ? " +
                      "WHERE transfer_id = ?";
         try {
             int rowsAffected = jdbcTemplate.update(sql, transfer.getTransfer_type_id(), transfer.getTransfer_status_id(),

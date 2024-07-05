@@ -241,7 +241,7 @@ public class App {
                     //transfer history only has approved or rejected status, not pending
                     {
                         String status;
-                        if(currentTransfer.getTransfer_type_id() == 2){
+                        if(currentTransfer.getTransfer_status_id() == 2){
                             status = "Approved";
                         }else{
                             status = "Rejected";
@@ -361,17 +361,16 @@ public class App {
             //not canceled, show other options
             if(userInputTransferId != 0) {
 
-                userInput = "1: Approve\n" + "2: Reject\n" + "0: Don't approve or reject";
+                userInput = "1: Approve\n" + "2: Reject\n" + "0: Don't approve or reject\n";
                 int userStatusChoice = consoleService.promptForInt(userInput);
 
                 //option 1: Approved
                 if (userStatusChoice == 1) {
                     try{
-                       // currentTransfer.setTransfer_status_id(2);
 
                         HttpEntity<Transfer> entity = new HttpEntity<>(currentTransfer, headers);
 
-                        restTemplate.exchange(API_BASE_URL + "/transfer/pending/approved", HttpMethod.PUT, entity, Transfer.class).getBody();
+                        restTemplate.exchange(API_BASE_URL + "/transfer/pending/approved", HttpMethod.PUT, entity, Transfer.class);
                         System.out.println("Transfer status is updated to approved");
                     }catch (RestClientResponseException error){
                         System.out.println(error.getResponseBodyAsString());
@@ -433,8 +432,8 @@ public class App {
         String userInput = "";
         int sendToUserId = 0;
         while(!check) {
-            System.out.println("Enter ID of user you are sending to (0 to cancel): ");
 
+            userInput = "Enter ID of user you are sending to (0 to cancel): ";
             sendToUserId = consoleService.promptForInt(userInput);
 
             if(sendToUserId == 0){
@@ -451,38 +450,39 @@ public class App {
                 System.out.println("User ID not found");
             }
         }
+        if(check) {
 
-        System.out.println("Enter Amount:");
-        BigDecimal amount = new BigDecimal(0);
-        BigDecimal checkZero = new BigDecimal(0);
+            userInput = "Enter Amount: ";
+            BigDecimal amount = new BigDecimal(0);
+            BigDecimal checkZero = new BigDecimal(0);
 
-        while(amount.equals(checkZero) || amount.compareTo(checkZero) == -1){
-            amount = consoleService.promptForBigDecimal(userInput);
-        }
+            while (amount.equals(checkZero) || amount.compareTo(checkZero) == -1) {
+                amount = consoleService.promptForBigDecimal(userInput);
+            }
 
 
+            try {
+                Transfer createSendTransfer = new Transfer();
+                createSendTransfer.setAccount_from(currentUser.getUser().getId());
+                createSendTransfer.setAccount_to(sendToUserId);
+                createSendTransfer.setTransfer_type_id(2);
+                createSendTransfer.setTransfer_status_id(2);
+                createSendTransfer.setAmount(amount);
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setBearerAuth(currentUser.getToken());
 
-        try{
-            Transfer createSendTransfer = new Transfer();
-            createSendTransfer.setAccount_from(currentUser.getUser().getId());
-            createSendTransfer.setAccount_to(sendToUserId);
-            createSendTransfer.setTransfer_type_id(2);
-            createSendTransfer.setTransfer_status_id(2);
-            createSendTransfer.setAmount(amount);
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(currentUser.getToken());
+                HttpEntity<Transfer> entity = new HttpEntity<>(createSendTransfer, headers);
 
-            HttpEntity<Transfer> entity = new HttpEntity<>(createSendTransfer, headers);
+                Transfer sendTransfer = restTemplate.exchange(API_BASE_URL + "/transfer/send", HttpMethod.POST, entity, Transfer.class).getBody();
+                System.out.println("Amount sent successfully");
+            } catch (RestClientResponseException error) {
+                System.out.println(error.getResponseBodyAsString());
+            } catch (ResourceAccessException error) {
+                System.out.println("Unable to connect to server");
+            } catch (Exception e) {
 
-            Transfer sendTransfer = restTemplate.exchange(API_BASE_URL + "/transfer/send", HttpMethod.POST, entity, Transfer.class).getBody();
-            System.out.println("Amount sent successfully");
-        }catch(RestClientResponseException error){
-            System.out.println(error.getResponseBodyAsString());
-        } catch(ResourceAccessException error){
-            System.out.println("Unable to connect to server");
-        }catch(Exception e){
-
+            }
         }
 		
 	}
@@ -520,8 +520,7 @@ public class App {
         String userInput = "";
         int requestFromUser = 0;
         while(!check) {
-            System.out.println("Enter ID of user you are requesting from (0 to cancel): ");
-
+            userInput = "Enter ID of user you are requesting from (0 to cancel): ";
             requestFromUser = consoleService.promptForInt(userInput);
 
             if(requestFromUser == 0){
@@ -540,32 +539,34 @@ public class App {
 
         }
 
-        userInput = "";
-        BigDecimal amount = new BigDecimal(0);
-        amount = consoleService.promptForBigDecimal(userInput);
+        if (check) {
+            userInput = "Enter Amount: ";
+            BigDecimal amount = new BigDecimal(0);
+            amount = consoleService.promptForBigDecimal(userInput);
 
-        Transfer createRequestTransfer = new Transfer();
-        createRequestTransfer.setAccount_from(requestFromUser);
-        createRequestTransfer.setAccount_to(currentUser.getUser().getId());
-        createRequestTransfer.setTransfer_type_id(1);
-        createRequestTransfer.setTransfer_status_id(1);
-        createRequestTransfer.setAmount(amount);
+            Transfer createRequestTransfer = new Transfer();
+            createRequestTransfer.setAccount_from(requestFromUser);
+            createRequestTransfer.setAccount_to(currentUser.getUser().getId());
+            createRequestTransfer.setTransfer_type_id(1);
+            createRequestTransfer.setTransfer_status_id(1);
+            createRequestTransfer.setAmount(amount);
 
-        try{
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(currentUser.getToken());
+            try {
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setBearerAuth(currentUser.getToken());
 
-            HttpEntity<Transfer> entity = new HttpEntity<>(createRequestTransfer, headers);
+                HttpEntity<Transfer> entity = new HttpEntity<>(createRequestTransfer, headers);
 
 
-            Transfer requestTransfer = restTemplate.exchange(API_BASE_URL + "/transfer/request", HttpMethod.PUT, entity, Transfer.class).getBody();
+                Transfer requestTransfer = restTemplate.exchange(API_BASE_URL + "/transfer/request", HttpMethod.PUT, entity, Transfer.class).getBody();
 
-            System.out.println("Request sent");
-        }catch(RestClientResponseException error){
-            System.out.println(error.getResponseBodyAsString());
-        } catch (ResourceAccessException error) {
-            System.out.println("Unable to reach server");
+                System.out.println("Request sent");
+            } catch (RestClientResponseException error) {
+                System.out.println(error.getResponseBodyAsString());
+            } catch (ResourceAccessException error) {
+                System.out.println("Unable to reach server");
+            }
         }
     }
 
