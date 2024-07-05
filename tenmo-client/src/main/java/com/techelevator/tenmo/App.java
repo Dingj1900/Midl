@@ -552,8 +552,8 @@ public class App {
         }
 
         userInput = "";
-        requestFromUser = consoleService.promptForInt(userInput);
         BigDecimal amount = new BigDecimal(0);
+        amount = consoleService.promptForBigDecimal(userInput);
 
         Transfer createRequestTransfer = new Transfer();
         createRequestTransfer.setAccount_from(requestFromUser);

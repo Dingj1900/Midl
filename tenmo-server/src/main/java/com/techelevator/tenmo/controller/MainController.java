@@ -195,7 +195,7 @@ public class MainController {
     }
 
     @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping(path = "/transfer/request")
+    @PutMapping(path = "/transfer/request")
     public Transfer postRequest(@Valid @RequestBody Transfer transfer, Principal principal){
 
         int userId = userDao.getUserByUsername(principal.getName()).getId();
