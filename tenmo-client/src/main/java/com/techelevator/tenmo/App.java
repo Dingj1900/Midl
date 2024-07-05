@@ -93,7 +93,9 @@ public class App {
             } else if (menuSelection == 5) {
                 requestBucks();
             } else if (menuSelection == 0) {
-                continue;
+                menuSelection = -1;
+                consoleService.printGreeting();
+                loginMenu();
             } else {
                 System.out.println("Invalid Selection");
             }
@@ -365,7 +367,7 @@ public class App {
                 //option 1: Approved
                 if (userStatusChoice == 1) {
                     try{
-                        currentTransfer.setTransfer_status_id(2);
+                       // currentTransfer.setTransfer_status_id(2);
 
                         HttpEntity<Transfer> entity = new HttpEntity<>(currentTransfer, headers);
 
@@ -378,11 +380,11 @@ public class App {
 
                 //option 2: rejected
                 if (userStatusChoice == 2) {
-                    currentTransfer.setTransfer_status_id(3);
+                  //  currentTransfer.setTransfer_status_id(3);
 
                     HttpEntity<Transfer> entity = new HttpEntity<>(currentTransfer, headers);
                     try {
-                        restTemplate.exchange(API_BASE_URL + "/transfer/pending/reject" , HttpMethod.PUT, entity, void.class);
+                        restTemplate.exchange(API_BASE_URL + "/transfer/pending/reject" , HttpMethod.PUT, entity, Transfer.class);
                         System.out.println("Transfer status is updated to rejected");
                     } catch (RestClientResponseException error) {
                         System.out.println(error.getResponseBodyAsString());
