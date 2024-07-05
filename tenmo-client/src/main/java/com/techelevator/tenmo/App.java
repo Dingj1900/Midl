@@ -290,10 +290,11 @@ public class App {
                 "ID          To                     Amount\n" +
                 "-------------------------------------------");
         Transfer [] transfers;
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(currentUser.getToken());
         try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(currentUser.getToken());
+
             HttpEntity<String> entity = new HttpEntity<>(headers);
 
             transfers = restTemplate.exchange(API_BASE_URL + "/transfer/pending", HttpMethod.GET, entity, Transfer[].class).getBody();
@@ -307,10 +308,11 @@ public class App {
 
         for (int i = 0; i < transfers.length; i++) {
             Transfer currentTransfer = transfers[i];
-            System.out.println(currentTransfer.getAccount_to() + "          " + getUsernameById(currentTransfer.getAccount_to()) + "                 $" + currentTransfer.getAmount());
+            System.out.println(currentTransfer.getTransfer_id() + "          " + getUsernameById(currentTransfer.getAccount_to()) + "                 $" + currentTransfer.getAmount());
         }
 
         int userInputTransferId = -1;
+        Transfer currentTransfer = null;
         while(userInputTransferId!=0 ) {
 
             String userInput = "";
@@ -327,7 +329,25 @@ public class App {
                 //if exist in the transfer list
                 for (int i = 0; i < transfers.length; i++) {
                     if (transfers[i].getTransfer_id() == userInputTransferId) {
-                        check = true;
+                        int userAccountId = 0;
+                      try {
+                          HttpEntity<String> entity = new HttpEntity<>(headers);
+                          ResponseEntity<Integer> userAccount = restTemplate.exchange(API_BASE_URL + "/account/user", HttpMethod.GET, entity, int.class);
+                           userAccountId = userAccount.getBody();
+                      } catch(RestClientResponseException error) {
+                          System.out.println(error.getResponseBodyAsString());
+                      }catch (ResourceAccessException error) {
+                          System.out.println("Can not read server");
+                      }
+
+                        if(transfers[i].getAccount_to() == userAccountId ) {
+                            System.out.println("Can not modify your own request");
+                        } else {
+                            currentTransfer = transfers[i];
+                            check = true;
+                        }
+
+
                     }
                 }
 
@@ -344,13 +364,9 @@ public class App {
                 //option 1: Approved
                 if (userStatusChoice == 1) {
                     try{
-                        HttpHeaders headers = new HttpHeaders();
-                        headers.setContentType(MediaType.APPLICATION_JSON);
-                        headers.setBearerAuth(currentUser.getToken());
+                        currentTransfer.setTransfer_status_id(2);
 
-                        transfers[userInputTransferId].setTransfer_status_id(2);
-
-                        HttpEntity<Transfer> entity = new HttpEntity<>(transfers[userInputTransferId],headers);
+                        HttpEntity<Transfer> entity = new HttpEntity<>(currentTransfer, headers);
 
                         restTemplate.exchange(API_BASE_URL + "/transfer/pending/approved", HttpMethod.PUT, entity, Transfer.class).getBody();
                         System.out.println("Transfer status is updated to approved");
@@ -361,13 +377,9 @@ public class App {
 
                 //option 2: rejected
                 if (userStatusChoice == 2) {
-                    transfers[userInputTransferId].setTransfer_status_id(3);
+                    currentTransfer.setTransfer_status_id(3);
 
-                    HttpHeaders headers = new HttpHeaders();
-                    headers.setContentType(MediaType.APPLICATION_JSON);
-                    headers.setBearerAuth(currentUser.getToken());
-
-                    HttpEntity<Transfer> entity = new HttpEntity<>(transfers[userInputTransferId], headers);
+                    HttpEntity<Transfer> entity = new HttpEntity<>(currentTransfer, headers);
                     try {
                         restTemplate.exchange(API_BASE_URL + "/transfer/pending/reject" , HttpMethod.PUT, entity, void.class);
                         System.out.println("Transfer status is updated to rejected");
@@ -515,7 +527,7 @@ public class App {
 
             for(User element: users){
 
-                if(element.getId() != requestFromUser) {
+                if(element.getId() == requestFromUser) {
                     check = true;
                 }
             }
@@ -532,8 +544,8 @@ public class App {
         Transfer createRequestTransfer = new Transfer();
         createRequestTransfer.setAccount_from(requestFromUser);
         createRequestTransfer.setAccount_to(currentUser.getUser().getId());
-        createRequestTransfer.setTransfer_type_id(2);
-        createRequestTransfer.setTransfer_status_id(2);
+        createRequestTransfer.setTransfer_type_id(1);
+        createRequestTransfer.setTransfer_status_id(1);
         createRequestTransfer.setAmount(amount);
 
         try{
