@@ -202,12 +202,16 @@ public class MainController {
 
         BigDecimal transferAmount = transfer.getAmount();
         int accountId = accountDao.getAccountByUserId(userId).getId();
+        int accountFromId = accountDao.getAccountByUserId(transfer.getAccount_from()).getId();
+        int accountToId = accountDao.getAccountByUserId(transfer.getAccount_to()).getId();
 
         if (transfer.getAccount_to() == transfer.getAccount_from()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot send money to yourself");
         }
-        if (accountId != transfer.getAccount_to()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You are not a part of this transfer");
+
+
+        if (accountId != accountToId) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You are not requesting a transfer from another account");
         }
 
         BigDecimal empty = new BigDecimal(0);
@@ -222,7 +226,8 @@ public class MainController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Transfer is not a request");
         }
         try {
-
+            transfer.setAccount_from(accountFromId);
+            transfer.setAccount_to(accountToId);
 
             Transfer newTransfer = transferDao.createTransfer(transfer);
 
