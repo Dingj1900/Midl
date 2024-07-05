@@ -335,6 +335,7 @@ public class App {
                     System.out.println("Not a valid transfer id");
                 }
             }
+
             //not canceled, show other options
             if(userInputTransferId != 0) {
 
