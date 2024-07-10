@@ -99,7 +99,9 @@ public class App {
             } else {
                 System.out.println("Invalid Selection");
             }
-            consoleService.pause();
+            if (currentUser != null) {
+                consoleService.pause();
+            }
         }
     }
 
@@ -182,6 +184,8 @@ public class App {
 
         int userNumber = -1;
         while(userNumber != 0){
+            System.out.println();
+            System.out.println();
             userNumber = consoleService.promptForInt("Please enter transfer ID to view details (0 to cancel): ");
 
             if(userNumber == 0){
@@ -251,11 +255,12 @@ public class App {
 
                     System.out.println("Amount: $" + currentTransfer.getAmount());
 
-
-
                 }else{
                     System.out.println("Transfer Id does not exist");
                 }
+                System.out.println();
+                System.out.println();
+
             }
             else {
                 System.out.println("Cannot be negative");
@@ -312,6 +317,8 @@ public class App {
             Transfer currentTransfer = transfers[i];
             System.out.println(currentTransfer.getTransfer_id() + "          " + getUsernameById(currentTransfer.getAccount_to()) + "                 $" + currentTransfer.getAmount());
         }
+        System.out.println();
+        System.out.println();
 
         int userInputTransferId = -1;
         Transfer currentTransfer = null;
@@ -319,6 +326,7 @@ public class App {
 
             String userInput = "";
             boolean check = false;
+            boolean selfCheck = false;
             while(!check) {
                 userInput = ("Please enter transfer ID to approve/reject (0 to cancel): ");
                 userInputTransferId = consoleService.promptForInt(userInput);
@@ -343,7 +351,12 @@ public class App {
                       }
 
                         if(transfers[i].getAccount_to() == userAccountId ) {
-                            System.out.println("Can not modify your own request");
+                            selfCheck = true;
+
+                            System.out.println();
+                            System.out.println("       ** Can not modify your own request **");
+                            System.out.println();
+
                         } else {
                             currentTransfer = transfers[i];
                             check = true;
@@ -353,7 +366,7 @@ public class App {
                     }
                 }
 
-                if(check == false){
+                if(selfCheck == false && check == false){
                     System.out.println("Not a valid transfer id");
                 }
             }
@@ -422,6 +435,9 @@ public class App {
                     System.out.println(element.getId() + "          " + element.getUsername());
                 }
             }
+            System.out.println();
+            System.out.println();
+
 
         }catch (RestClientResponseException error){
             System.out.println(error.getResponseBodyAsString());
@@ -510,6 +526,8 @@ public class App {
                     System.out.println(element.getId() + "          " + element.getUsername());
                 }
             }
+            System.out.println();
+            System.out.println();
 
         }catch (RestClientResponseException error){
             System.out.println(error.getResponseBodyAsString());
