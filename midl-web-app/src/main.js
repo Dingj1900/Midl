@@ -1,4 +1,6 @@
 import './assets/main.css'
+import axios from 'axios'
+
 
 import { createApp } from 'vue'
 import App from './App.vue'
@@ -9,3 +11,5 @@ const app = createApp(App)
 app.use(router)
 
 app.mount('#app')
+
+axios.defaults.baseUrl = "http://localhost:8080"

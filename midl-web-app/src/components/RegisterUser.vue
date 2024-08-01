@@ -22,20 +22,29 @@
           <label for="home-address">Home Address:</label>
           <input type="text" id="home-address" v-model="homeAddress" required />
         </div>
-        <button type="submit">Register</button>
+        <button type="submit" @click.prevent="handleSubmit">Register</button>
       </form>
     </div>
   </template>
   
   <script>
+
+  import RegisterService from "@/service/RegisterService";
   export default {
+
+  
     data() {
       return {
+
+        registerUser : {
+
         firstName: '',
         lastName: '',
         email: '',
         password: '',
         homeAddress: ''
+        },
+        
       };
     },
     methods: {
@@ -46,7 +55,24 @@
         console.log('Email:', this.email);
         console.log('Password:', this.password);
         console.log('Home Address:', this.homeAddress);
+
+
+          RegisterService.registerUser(this.registerUser).then(response => {
+            
+              if(response.status === 201){
+                alert("success")
+              }
+
+          })
+
+
         // You can add more logic for registration here
+
+
+
+
+
+
       }
     }
   };
