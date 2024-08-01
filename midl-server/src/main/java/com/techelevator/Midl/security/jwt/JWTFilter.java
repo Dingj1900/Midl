@@ -1,4 +1,4 @@
-package com.techelevator.tenmo.security.jwt;
+package com.techelevator.Midl.security.jwt;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

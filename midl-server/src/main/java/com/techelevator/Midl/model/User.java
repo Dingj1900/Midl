@@ -1,4 +1,4 @@
-package com.techelevator.tenmo.model;
+package com.techelevator.Midl.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 

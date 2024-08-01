@@ -1,4 +1,4 @@
-package com.techelevator.tenmo.security.jwt;
+package com.techelevator.Midl.security.jwt;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;

@@ -1,8 +1,8 @@
-package com.techelevator.tenmo.security;
+package com.techelevator.Midl.security;
 
-import com.techelevator.tenmo.dao.UserDao;
-import com.techelevator.tenmo.model.Authority;
-import com.techelevator.tenmo.model.User;
+import com.techelevator.Midl.dao.UserDao;
+import com.techelevator.Midl.model.Authority;
+import com.techelevator.Midl.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.GrantedAuthority;

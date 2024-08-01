@@ -1,4 +1,4 @@
-package com.techelevator.tenmo.exception;
+package com.techelevator.Midl.exception;
 
 public class DaoException extends RuntimeException {
     public DaoException() {

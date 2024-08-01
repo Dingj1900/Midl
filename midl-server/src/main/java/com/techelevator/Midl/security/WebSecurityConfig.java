@@ -1,7 +1,7 @@
-package com.techelevator.tenmo.security;
+package com.techelevator.Midl.security;
 
-import com.techelevator.tenmo.security.jwt.JWTConfigurer;
-import com.techelevator.tenmo.security.jwt.TokenProvider;
+import com.techelevator.Midl.security.jwt.JWTConfigurer;
+import com.techelevator.Midl.security.jwt.TokenProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
